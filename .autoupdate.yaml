@@ -1,0 +1,14 @@
+providers:
+  - type: 'github'
+    token: "${GITHUB_TOKEN}"
+    organizations:
+      - 'rios0rios0'
+
+updaters:
+  terraform:
+    enabled: true
+    auto_complete: false
+    target_branch: 'main'
+  golang:
+    enabled: true
+    target_branch: 'main'

@@ -1,0 +1,27 @@
+on:
+  schedule:
+    - cron: '0 12 * * *' # https://crontab.guru/#0_12_*_*_* "At 12:00."
+  workflow_dispatch: # allows manual triggering of the workflow
+
+jobs:
+  run:
+    name: 'autoupdate > run'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout code'
+        uses: 'actions/checkout@v6'
+
+      - name: 'Install Dependencies'
+        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends unzip curl jq
+
+      - name: 'Download Autoupdate'
+        run: |
+          export AUTOUPDATE_VERSION=$(curl -sSLH 'Accept: application/vnd.github.v3+json' \
+              'https://api.github.com/repos/rios0rios0/autoupdate/releases/latest' | jq -r '.tag_name')
+          curl -LO "https://github.com/rios0rios0/autoupdate/releases/download/$AUTOUPDATE_VERSION/autoupdate-$AUTOUPDATE_VERSION.zip"
+          unzip "autoupdate-$AUTOUPDATE_VERSION.zip"
+
+      - name: 'Run Autoupdate'
+        run: ./autoupdate run
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}

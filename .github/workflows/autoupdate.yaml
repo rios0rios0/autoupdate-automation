@@ -11,15 +11,8 @@ jobs:
       - name: 'Checkout code'
         uses: 'actions/checkout@v6'
 
-      - name: 'Install Dependencies'
-        run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends unzip curl jq
-
       - name: 'Download Autoupdate'
-        run: |
-          export AUTOUPDATE_VERSION=$(curl -sSLH 'Accept: application/vnd.github.v3+json' \
-              'https://api.github.com/repos/rios0rios0/autoupdate/releases/latest' | jq -r '.tag_name')
-          curl -LO "https://github.com/rios0rios0/autoupdate/releases/download/$AUTOUPDATE_VERSION/autoupdate-$AUTOUPDATE_VERSION.zip"
-          unzip "autoupdate-$AUTOUPDATE_VERSION.zip"
+        run: curl -fsSL https://raw.githubusercontent.com/rios0rios0/autoupdate/main/install.sh | sh -s -- --install-dir . --force
 
       - name: 'Run Autoupdate'
         run: ./autoupdate run

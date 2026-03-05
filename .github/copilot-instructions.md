@@ -8,11 +8,9 @@ This repository provides automated dependency and version management across mult
 
 ### Bootstrap and Test the Repository
 - Install required system dependencies:
-  - `sudo apt-get update && sudo apt-get install -y unzip curl jq` -- takes 30-60 seconds
-- Download and test autoupdate binary:
-  - `export AUTOUPDATE_VERSION=$(curl -sSLH 'Accept: application/vnd.github.v3+json' 'https://api.github.com/repos/rios0rios0/autoupdate/releases/latest' | jq -r '.tag_name')`
-  - `curl -LO "https://github.com/rios0rios0/autoupdate/releases/download/$AUTOUPDATE_VERSION/autoupdate-$AUTOUPDATE_VERSION.zip"` -- downloads the binary
-  - `unzip "autoupdate-$AUTOUPDATE_VERSION.zip"` -- extracts in <1 second
+  - `sudo apt-get update && sudo apt-get install -y curl` -- takes 30-60 seconds
+- Download and test autoupdate binary using the official install script:
+  - `curl -fsSL https://raw.githubusercontent.com/rios0rios0/autoupdate/main/install.sh | sh -s -- --install-dir . --force` -- downloads and installs the binary
   - `./autoupdate --help` -- verify binary works
 
 ### Configuration Management
@@ -36,11 +34,11 @@ This repository provides automated dependency and version management across mult
 - **ALWAYS** test workflow components after making configuration changes
 - Run the complete workflow simulation:
   1. Download dependencies (30-60 seconds)
-  2. Download autoupdate binary (<1 second)
+  2. Download autoupdate binary via install script (<5 seconds)
   3. Test binary execution (<1 second)
   4. Validate configuration syntax (<1 second)
 - **NEVER CANCEL** workflow operations - all steps complete in under 2 minutes
-- The actual GitHub Actions workflow runs daily at 12:00 UTC and can be manually triggered
+- The actual GitHub Actions workflow runs daily at 11:00 UTC and can be manually triggered
 
 ### Configuration Validation Steps
 - Validate YAML syntax: `yamllint .autoupdate.yaml`
@@ -56,10 +54,15 @@ This repository provides automated dependency and version management across mult
 ├── .autoupdate.yaml         # Main autoupdate configuration (providers + updaters)
 ├── .editorconfig            # Editor configuration
 ├── .github/
+│   ├── pull_request_template/
+│   │   ├── bump.md          # PR template for dependency bump PRs
+│   │   └── default.md       # Default PR template
+│   ├── pull_request_template.md  # Legacy PR template
 │   ├── workflows/
 │   │   └── autoupdate.yaml  # Daily automation workflow
-│   ├── copilot-instructions.md
-│   └── pull_request_template.md
+│   └── copilot-instructions.md
+├── CONTRIBUTING.md          # Contribution guidelines
+├── LICENSE                  # Project license
 └── README.md                # Basic project description
 ```
 
@@ -86,9 +89,9 @@ updaters:
 
 #### .github/workflows/autoupdate.yaml
 GitHub Actions workflow that:
-- Runs daily at 12:00 UTC (`cron: '0 12 * * *'`)
+- Runs daily at 11:00 UTC / 8:00 AM BRT (`cron: '0 11 * * *'`)
 - Can be manually triggered via workflow_dispatch
-- Downloads latest autoupdate binary from GitHub releases
+- Downloads latest autoupdate binary using the official install script
 - Runs `./autoupdate run` with `GITHUB_TOKEN` from secrets
 
 ### Workflow Secrets Required
@@ -97,8 +100,8 @@ The GitHub Actions workflow expects these repository secrets:
 
 ### Expected Timing
 - **apt-get update && install**: 30-60 seconds
-- **autoupdate download**: <1 second
-- **autoupdate extraction**: <1 second
+- **autoupdate install script**: <5 seconds
+- **autoupdate execution**: <1 second
 - **configuration validation**: <1 second
 - **Complete workflow test**: <2 minutes total
 

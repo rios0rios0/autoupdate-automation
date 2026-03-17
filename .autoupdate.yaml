@@ -1,6 +1,8 @@
+gpg_key_path: '.secure_files/autoupdate.asc'
+
 providers:
   - type: 'github'
-    token: "${GITHUB_TOKEN}"
+    token: '.secure_files/github_access_token.key'
     organizations:
       - 'rios0rios0'
 

@@ -1,6 +1,6 @@
 on:
   schedule:
-    - cron: '0 11 * * *' # https://crontab.guru/#0_11_*_*_* "At 11:00 (8am BRT)."
+    - cron: '0 9 * * *' # https://crontab.guru/#0_9_*_*_* "At 09:00 (6am BRT)."
   workflow_dispatch: # allows manual triggering of the workflow
 
 jobs:
@@ -14,7 +14,44 @@ jobs:
       - name: 'Download Autoupdate'
         run: curl -fsSL https://raw.githubusercontent.com/rios0rios0/autoupdate/main/install.sh | sh -s -- --install-dir . --force
 
-      - name: 'Run Autoupdate'
-        run: ./autoupdate run
+      - name: 'Configure Git'
+        run: |
+          cat <<-EOF >~/.gitconfig
+          [user]
+              name = ${{ vars.GIT_USER }}
+              email = ${{ vars.GIT_USER_EMAIL }}
+              signingkey = ${{ vars.GIT_USER_SIGNINGKEY }}
+          [push]
+              autoSetupRemote = true
+          [commit]
+              gpgsign = true
+          EOF
+
+      - name: 'Prepare Secrets'
+        run: |
+          mkdir -p '.secure_files'
+          printf '%s' "${GPG_PRIVATE_KEY}" > '.secure_files/autoupdate.asc'
+          printf '%s' "${PERSONAL_ACCESS_TOKEN}" > '.secure_files/github_access_token.key'
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+      - name: 'Validate GPG Key'
+        run: |
+          if [ ! -s '.secure_files/autoupdate.asc' ]; then
+            echo 'ERROR: GPG key file is empty'
+            exit 1
+          fi
+          if ! grep -q 'BEGIN PGP' '.secure_files/autoupdate.asc' || ! grep -q 'END PGP' '.secure_files/autoupdate.asc'; then
+            echo 'ERROR: GPG key file does not contain valid armored PGP data'
+            echo "GPG key file size (bytes): $(wc -c < '.secure_files/autoupdate.asc' || echo 'unknown')"
+            echo 'Ensure GPG_PRIVATE_KEY secret contains the output of: gpg --export-secret-key --armor <KEY_ID>'
+            exit 1
+          fi
+
+      - name: 'Run Autoupdate'
+        run: |
+          set -e
+
+          ./autoupdate run
+          rm -rf '.secure_files'

@@ -14,3 +14,9 @@ updaters:
   golang:
     enabled: true
     target_branch: 'main'
+  pipeline:
+    enabled: true
+    target_branch: 'main'
+  dockerfile:
+    enabled: true
+    target_branch: 'main'

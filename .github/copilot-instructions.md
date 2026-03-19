@@ -17,7 +17,7 @@ This repository provides automated dependency and version management across mult
 - The main configuration file is `.autoupdate.yaml` containing:
   - Provider definitions with token references (resolved from environment variables or file paths)
   - Organization list for auto-discovery of repositories
-  - Updater settings (Terraform and Go dependency updaters)
+  - Updater settings (Terraform, Go, Pipeline, and Dockerfile dependency updaters)
 - Token format supports inline values, `${ENV_VAR}` references, or file paths
 - Validate configuration syntax: `yamllint .autoupdate.yaml` -- takes <1 second
   - WARNING: yamllint will report missing document start "---" which is acceptable
@@ -83,6 +83,12 @@ updaters:
     auto_complete: false
     target_branch: "main"
   golang:
+    enabled: true
+    target_branch: "main"
+  pipeline:
+    enabled: true
+    target_branch: "main"
+  dockerfile:
     enabled: true
     target_branch: "main"
 ```

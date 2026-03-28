@@ -1,4 +1,5 @@
 gpg_key_path: '.secure_files/autoupdate.asc'
+exclude_forks: true
 
 providers:
   - type: 'github'

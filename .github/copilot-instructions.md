@@ -15,17 +15,18 @@ This repository provides automated dependency and version management across mult
 
 ### Configuration Management
 - The main configuration file is `.autoupdate.yaml` containing:
-  - Provider definitions with token references (resolved from environment variables or file paths)
+  - `gpg_key_path` pointing to the GPG signing key
+  - `exclude_forks: true` to skip forked repositories
+  - Provider definitions with token references (resolved from file paths or environment variables)
   - Organization list for auto-discovery of repositories
-  - Updater settings (Terraform, Go, Pipeline, and Dockerfile dependency updaters)
-- Token format supports inline values, `${ENV_VAR}` references, or file paths
+- Token format supports inline values, `${ENV_VAR}` references, or file paths (current config uses a file path)
 - Validate configuration syntax: `yamllint .autoupdate.yaml` -- takes <1 second
   - WARNING: yamllint will report missing document start "---" which is acceptable
 
 ### Testing Workflow Components
 - Test autoupdate processing:
   - `./autoupdate run --dry-run` -- preview changes without creating PRs
-  - With valid `GITHUB_TOKEN` env var: discovers repos and scans dependencies
+  - With valid credentials: discovers repos and scans dependencies
   - Without credentials: fails with authentication errors (<1 second), which is expected
 
 ## Validation
@@ -38,29 +39,32 @@ This repository provides automated dependency and version management across mult
   3. Test binary execution (<1 second)
   4. Validate configuration syntax (<1 second)
 - **NEVER CANCEL** workflow operations - all steps complete in under 2 minutes
-- The actual GitHub Actions workflow runs daily at 11:00 UTC and can be manually triggered
+- The actual GitHub Actions workflow runs daily at 09:00 UTC (6:00 AM BRT) and can be manually triggered
 
 ### Configuration Validation Steps
 - Validate YAML syntax: `yamllint .autoupdate.yaml`
 - Test autoupdate config parsing: `./autoupdate run --dry-run` (expect authentication errors without credentials)
 - Verify provider organizations are accessible
-- Check that token references (`${GITHUB_TOKEN}`) correspond to configured repository secrets
+- Check that token file paths or env var references correspond to configured repository secrets
 
 ## Common Tasks
 
 ### Repository Structure
 ```
 .
-├── .autoupdate.yaml         # Main autoupdate configuration (providers + updaters)
+├── .autoupdate.yaml         # Main autoupdate configuration (providers, GPG, exclusions)
 ├── .editorconfig            # Editor configuration
 ├── .github/
+│   ├── copilot-instructions.md
 │   ├── pull_request_template/
 │   │   ├── bump.md          # PR template for dependency bump PRs
 │   │   └── default.md       # Default PR template
 │   ├── pull_request_template.md  # Legacy PR template
-│   ├── workflows/
-│   │   └── autoupdate.yaml  # Daily automation workflow
-│   └── copilot-instructions.md
+│   └── workflows/
+│       ├── autoupdate.yaml       # Daily automation workflow
+│       ├── claude.yaml           # Claude Code assistant workflow
+│       └── claude-code-review.yaml  # Claude Code PR review workflow
+├── CHANGELOG.md             # Release history (Keep a Changelog format)
 ├── CONTRIBUTING.md          # Contribution guidelines
 ├── LICENSE                  # Project license
 └── README.md                # Basic project description
@@ -69,40 +73,37 @@ This repository provides automated dependency and version management across mult
 ### Key Configuration Files
 
 #### .autoupdate.yaml
-Contains provider and updater configuration:
+Contains provider and top-level configuration:
 ```yaml
-providers:
-  - type: github
-    token: "${GITHUB_TOKEN}"
-    organizations:
-      - "rios0rios0"
+gpg_key_path: '.secure_files/autoupdate.asc'
+exclude_forks: true
 
-updaters:
-  terraform:
-    enabled: true
-    auto_complete: false
-    target_branch: "main"
-  golang:
-    enabled: true
-    target_branch: "main"
-  pipeline:
-    enabled: true
-    target_branch: "main"
-  dockerfile:
-    enabled: true
-    target_branch: "main"
+providers:
+  - type: 'github'
+    token: '.secure_files/github_access_token.key'
+    organizations:
+      - 'rios0rios0'
 ```
 
 #### .github/workflows/autoupdate.yaml
 GitHub Actions workflow that:
-- Runs daily at 11:00 UTC / 8:00 AM BRT (`cron: '0 11 * * *'`)
+- Runs daily at 09:00 UTC / 6:00 AM BRT (`cron: '0 9 * * *'`)
 - Can be manually triggered via workflow_dispatch
 - Downloads latest autoupdate binary using the official install script
-- Runs `./autoupdate run` with `GITHUB_TOKEN` from secrets
+- Writes secrets to `.secure_files/` (GPG key and GitHub token as files)
+- Validates the GPG key before running
+- Runs `./autoupdate run` (reads credentials from file paths in `.autoupdate.yaml`)
+- Cleans up `.secure_files/` on completion (always, even on failure)
 
 ### Workflow Secrets Required
 The GitHub Actions workflow expects these repository secrets:
-- `PERSONAL_ACCESS_TOKEN` - GitHub token with repo access (mapped to `GITHUB_TOKEN` env var)
+- `PERSONAL_ACCESS_TOKEN` - GitHub token with repo access (written to `.secure_files/github_access_token.key`)
+- `GPG_PRIVATE_KEY` - Armored GPG private key for commit signing (written to `.secure_files/autoupdate.asc`)
+
+And these repository variables:
+- `GIT_USER_NAME` - Git committer name
+- `GIT_USER_EMAIL` - Git committer email
+- `GIT_USER_SIGNINGKEY` - GPG signing key ID
 
 ### Expected Timing
 - **apt-get update && install**: 30-60 seconds
@@ -113,9 +114,11 @@ The GitHub Actions workflow expects these repository secrets:
 
 ### Common Failure Scenarios
 - **"at least one provider must be configured"**: Check `.autoupdate.yaml` has valid provider entries
-- **"providers[0].token is required"**: Ensure `GITHUB_TOKEN` env var is set or token is configured
+- **"providers[0].token is required"**: Ensure token file path or env var is configured
 - **"providers[0].organizations must have at least one entry"**: Add at least one organization
-- **Missing secrets**: Workflow will fail if `PERSONAL_ACCESS_TOKEN` secret is not configured
+- **"ERROR: GPG key file is empty"**: `GPG_PRIVATE_KEY` secret is not set or is empty
+- **"ERROR: GPG key file does not contain valid armored PGP data"**: Secret must contain `gpg --export-secret-key --armor` output
+- **Missing secrets**: Workflow will fail if `PERSONAL_ACCESS_TOKEN` or `GPG_PRIVATE_KEY` secrets are not configured
 
 ### Making Changes
 - **ALWAYS** validate configuration changes with `yamllint .autoupdate.yaml`

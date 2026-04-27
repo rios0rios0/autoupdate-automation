@@ -18,7 +18,11 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 
 ### Added
 
+- created `CLAUDE.md` with repository guidance for Claude Code sessions
+
 ### Changed
+
+- refreshed `.github/copilot-instructions.md` to match current `.autoupdate.yaml` config (file-based secrets, GPG signing, `exclude_forks`), corrected workflow schedule to 09:00 UTC, added missing secrets/variables documentation, and updated repository structure tree
 
 ### Removed
 

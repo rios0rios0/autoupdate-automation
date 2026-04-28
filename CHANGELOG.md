@@ -16,6 +16,8 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-28
+
 ### Added
 
 - created `CLAUDE.md` with repository guidance for Claude Code sessions
@@ -23,9 +25,6 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 ### Changed
 
 - refreshed `.github/copilot-instructions.md` to match current `.autoupdate.yaml` config (file-based secrets, GPG signing, `exclude_forks`), corrected workflow schedule to 09:00 UTC, added missing secrets/variables documentation, and updated repository structure tree
-
-### Removed
-
 
 ## [0.1.0] - 2026-03-24
 

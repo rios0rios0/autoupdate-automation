@@ -62,9 +62,11 @@ This repository provides automated dependency and version management across mult
 │   ├── pull_request_template.md  # Legacy PR template
 │   └── workflows/
 │       ├── autoupdate.yaml       # Daily automation workflow
+│       ├── claude-code-review.yaml  # Claude Code PR review workflow
 │       ├── claude.yaml           # Claude Code assistant workflow
-│       └── claude-code-review.yaml  # Claude Code PR review workflow
+│       └── release.yaml          # Release tagging workflow
 ├── CHANGELOG.md             # Release history (Keep a Changelog format)
+├── CLAUDE.md                # Claude Code assistant guidance
 ├── CONTRIBUTING.md          # Contribution guidelines
 ├── LICENSE                  # Project license
 └── README.md                # Basic project description

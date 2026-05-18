@@ -16,6 +16,10 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 
 ## [Unreleased]
 
+### Changed
+
+- refreshed `CLAUDE.md` and `.github/copilot-instructions.md` to document the `release.yaml` workflow and update repository structure tree
+
 ## [0.2.0] - 2026-04-28
 
 ### Added

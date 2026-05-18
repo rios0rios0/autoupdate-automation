@@ -11,6 +11,7 @@ Configuration-only repository that runs [autoupdate](https://github.com/rios0rio
 - `.autoupdate.yaml` — autoupdate tool configuration: providers, GPG key path, fork exclusion.
 - `.github/workflows/autoupdate.yaml` — daily workflow (09:00 UTC). Writes secrets to `.secure_files/` as files, runs autoupdate, cleans up.
 - `.github/workflows/claude.yaml` and `claude-code-review.yaml` — Claude Code assistant and PR review workflows (delegate to reusable workflows in `rios0rios0/.github`).
+- `.github/workflows/release.yaml` — tags releases on push to `main` (delegates to reusable workflow in `rios0rios0/pipelines`).
 
 ## Architecture: File-Based Secrets
 

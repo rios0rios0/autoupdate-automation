@@ -21,6 +21,10 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 - added the `medhub-tech` and `prefy` organizations to the GitHub provider in `.autoupdate.yaml`, so repositories in both are discovered and dependency-updated alongside `rios0rios0`
 - added a `Setup Flutter` step to the daily workflow so `dart` and `flutter` are on the `PATH` when AutoUpdate runs — the `ubuntu-latest` runner preinstalls Go, Node.js, Python, Ruby, Java and .NET but ships no Dart SDK, and AutoUpdate's Dart updater downgrades a missing toolchain to a warning, so Dart and Flutter repositories would have been skipped silently instead of failing loudly
 
+### Security
+
+- restricted the daily workflow's `GITHUB_TOKEN` to `contents: read`, the minimum `actions/checkout` needs — the job authenticates to GitHub with `PERSONAL_ACCESS_TOKEN` from `.secure_files/`, so it never needed the broader set of scopes it was inheriting from the repository default
+
 ## [0.2.1] - 2026-05-19
 
 ### Changed

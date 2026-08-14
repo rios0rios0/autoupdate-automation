@@ -3,6 +3,11 @@ on:
     - cron: '0 9 * * *' # https://crontab.guru/#0_9_*_*_* "At 09:00 (6am BRT)."
   workflow_dispatch: # allows manual triggering of the workflow
 
+# the job authenticates to GitHub with `PERSONAL_ACCESS_TOKEN` from `.secure_files/`,
+# so `GITHUB_TOKEN` is only needed by `actions/checkout` to read this repository
+permissions:
+  contents: 'read'
+
 jobs:
   run:
     name: 'autoupdate > run'

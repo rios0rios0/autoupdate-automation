@@ -93,6 +93,8 @@ providers:
 GitHub Actions workflow that:
 - Runs daily at 09:00 UTC / 6:00 AM BRT (`cron: '0 9 * * *'`)
 - Can be manually triggered via workflow_dispatch
+- Declares `permissions: contents: read` — the least privilege `actions/checkout` needs; GitHub API work uses `PERSONAL_ACCESS_TOKEN`, not `GITHUB_TOKEN`
+- Installs Flutter via `subosito/flutter-action@v2` (stable channel, cache enabled) — the runner image has no Dart toolchain, and Flutter bundles the Dart SDK, so this puts both `flutter` and `dart` on the `PATH`
 - Downloads latest autoupdate binary using the official install script
 - Writes secrets to `.secure_files/` (GPG key and GitHub token as files)
 - Validates the GPG key before running

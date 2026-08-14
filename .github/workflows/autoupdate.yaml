@@ -3,6 +3,11 @@ on:
     - cron: '0 9 * * *' # https://crontab.guru/#0_9_*_*_* "At 09:00 (6am BRT)."
   workflow_dispatch: # allows manual triggering of the workflow
 
+# the job authenticates to GitHub with `PERSONAL_ACCESS_TOKEN` from `.secure_files/`,
+# so `GITHUB_TOKEN` is only needed by `actions/checkout` to read this repository
+permissions:
+  contents: 'read'
+
 jobs:
   run:
     name: 'autoupdate > run'
@@ -10,6 +15,12 @@ jobs:
     steps:
       - name: 'Checkout code'
         uses: 'actions/checkout@v6'
+
+      - name: 'Setup Flutter'
+        uses: 'subosito/flutter-action@v2'
+        with:
+          channel: 'stable'
+          cache: true
 
       - name: 'Download Autoupdate'
         run: curl -fsSL https://raw.githubusercontent.com/rios0rios0/autoupdate/main/install.sh | sh -s -- --install-dir . --force

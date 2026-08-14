@@ -16,6 +16,10 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 
 ## [Unreleased]
 
+### Added
+
+- added the `medhub-tech` and `prefy` organizations to the GitHub provider in `.autoupdate.yaml`, so repositories in both are discovered and dependency-updated alongside `rios0rios0`
+
 ## [0.2.1] - 2026-05-19
 
 ### Changed

@@ -3,15 +3,29 @@ on:
     - cron: '0 9 * * *' # https://crontab.guru/#0_9_*_*_* "At 09:00 (6am BRT)."
   workflow_dispatch: # allows manual triggering of the workflow
 
-# the job authenticates to GitHub with `PERSONAL_ACCESS_TOKEN` from `.secure_files/`,
+# the job authenticates to GitHub with the per-owner token from `.secure_files/`,
 # so `GITHUB_TOKEN` is only needed by `actions/checkout` to read this repository
 permissions:
   contents: 'read'
 
 jobs:
   run:
-    name: 'autoupdate > run'
+    name: 'autoupdate > run (${{ matrix.owner.name }})'
     runs-on: 'ubuntu-latest'
+    strategy:
+      # a fine-grained PAT is bound to a single resource owner, so one token cannot span
+      # every owner and each one carries its own failure modes (expiry, revoked grant,
+      # organization policy). `fail-fast: false` keeps a broken token for one owner from
+      # cancelling the others
+      fail-fast: false
+      matrix:
+        owner:
+          - name: 'rios0rios0'
+            secret: 'PERSONAL_ACCESS_TOKEN'
+          - name: 'medhub-tech'
+            secret: 'MEDHUB_TECH_ACCESS_TOKEN'
+          - name: 'prefy'
+            secret: 'PREFY_ACCESS_TOKEN'
     steps:
       - name: 'Checkout code'
         uses: 'actions/checkout@v6'
@@ -42,12 +56,12 @@ jobs:
         run: |
           mkdir -p '.secure_files'
           printf '%s' "${GPG_PRIVATE_KEY}" > '.secure_files/autoupdate.asc'
-          printf '%s' "${PERSONAL_ACCESS_TOKEN}" > '.secure_files/github_access_token.key'
+          printf '%s' "${OWNER_ACCESS_TOKEN}" > '.secure_files/github_access_token.key'
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          OWNER_ACCESS_TOKEN: ${{ secrets[matrix.owner.secret] }}
 
-      - name: 'Validate GPG Key'
+      - name: 'Validate Secrets'
         run: |
           if [ ! -s '.secure_files/autoupdate.asc' ]; then
             echo 'ERROR: GPG key file is empty'
@@ -59,9 +73,58 @@ jobs:
             echo 'Ensure GPG_PRIVATE_KEY secret contains the output of: gpg --export-secret-key --armor <KEY_ID>'
             exit 1
           fi
+          if [ ! -s '.secure_files/github_access_token.key' ]; then
+            echo "ERROR: the '${OWNER_SECRET}' secret is empty or not set"
+            echo "Every owner needs its own fine-grained PAT, and '${OWNER_NAME}' reads it from '${OWNER_SECRET}'"
+            echo 'The token lifetime must be 366 days or less, otherwise the organizations reject it'
+            exit 1
+          fi
+        env:
+          OWNER_NAME: ${{ matrix.owner.name }}
+          OWNER_SECRET: ${{ matrix.owner.secret }}
+
+      - name: 'Render Owner Configuration'
+        run: |
+          cp '.autoupdate.yaml' "${RUNNER_TEMP}/autoupdate.yaml"
+          cat >>"${RUNNER_TEMP}/autoupdate.yaml" <<EOF
+
+          providers:
+            - type: 'github'
+              token: '.secure_files/github_access_token.key'
+              organizations:
+                - '${OWNER_NAME}'
+          EOF
+          cat "${RUNNER_TEMP}/autoupdate.yaml"
+        env:
+          OWNER_NAME: ${{ matrix.owner.name }}
 
       - name: 'Run Autoupdate'
-        run: ./autoupdate run
+        run: |
+          set -o pipefail
+          ./autoupdate run --config "${RUNNER_TEMP}/autoupdate.yaml" 2>&1 | tee "${RUNNER_TEMP}/autoupdate.log"
+
+      - name: 'Assert Owner Was Reached'
+        run: |
+          # AutoUpdate logs a discovery failure and still exits 0, so a revoked or
+          # policy-blocked token would otherwise surface as a green run that silently
+          # processed nothing. Fail this owner's job instead of hiding the gap
+          if grep -qE 'Failed to (discover repos in|initialize provider)' "${RUNNER_TEMP}/autoupdate.log"; then
+            echo "::error::AutoUpdate could not reach '${OWNER_NAME}', so none of its repositories were processed"
+            grep -E 'Failed to (discover repos in|initialize provider)' "${RUNNER_TEMP}/autoupdate.log" >&2
+            exit 1
+          fi
+          if ! grep -q 'Run complete:' "${RUNNER_TEMP}/autoupdate.log"; then
+            echo "::error::AutoUpdate produced no run summary for '${OWNER_NAME}'"
+            exit 1
+          fi
+          errors="$(sed -e 's/\x1b\[[0-9;]*m//g' "${RUNNER_TEMP}/autoupdate.log" \
+            | sed -n 's/.*Run complete: [0-9]\{1,\} repos processed, [0-9]\{1,\} PRs created, \([0-9]\{1,\}\) errors.*/\1/p' \
+            | tail -1)"
+          if [ -n "${errors}" ] && [ "${errors}" -gt 0 ]; then
+            echo "::warning::AutoUpdate reported ${errors} per-repository error(s) for '${OWNER_NAME}'"
+          fi
+        env:
+          OWNER_NAME: ${{ matrix.owner.name }}
 
       - name: 'Cleanup Secrets'
         if: always()

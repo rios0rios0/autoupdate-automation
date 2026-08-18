@@ -17,8 +17,9 @@ This repository provides automated dependency and version management across mult
 - The main configuration file is `.autoupdate.yaml` containing:
   - `gpg_key_path` pointing to the GPG signing key
   - `exclude_forks: true` to skip forked repositories
-  - Provider definitions with token references (resolved from file paths or environment variables)
-  - Organization list for auto-discovery of repositories
+  - **No** provider definitions. A fine-grained PAT is bound to a single resource owner, so the
+    workflow runs one matrix job per owner and appends a single-owner `providers` block (token
+    reference plus organization list) to a copy of this file at runtime
 - Token format supports inline values, `${ENV_VAR}` references, or file paths (current config uses a file path)
 - Validate configuration syntax: `yamllint .autoupdate.yaml` -- takes <1 second
   - WARNING: yamllint will report missing document start "---" which is acceptable
@@ -75,36 +76,53 @@ This repository provides automated dependency and version management across mult
 ### Key Configuration Files
 
 #### .autoupdate.yaml
-Contains provider and top-level configuration:
+Holds only the settings shared by every owner:
 ```yaml
 gpg_key_path: '.secure_files/autoupdate.asc'
 exclude_forks: true
+```
 
+The `Render Owner Configuration` step copies it to `${RUNNER_TEMP}/autoupdate.yaml` and appends
+the owner currently being processed, producing the file `./autoupdate run --config` reads:
+```yaml
 providers:
   - type: 'github'
     token: '.secure_files/github_access_token.key'
     organizations:
-      - 'rios0rios0'
       - 'medhub-tech'
-      - 'prefy'
 ```
 
 #### .github/workflows/autoupdate.yaml
 GitHub Actions workflow that:
 - Runs daily at 09:00 UTC / 6:00 AM BRT (`cron: '0 9 * * *'`)
 - Can be manually triggered via workflow_dispatch
-- Declares `permissions: contents: read` — the least privilege `actions/checkout` needs; GitHub API work uses `PERSONAL_ACCESS_TOKEN`, not `GITHUB_TOKEN`
+- Fans out into one job per owner via `strategy.matrix.owner`, each entry pairing an owner name
+  with the secret holding that owner's fine-grained PAT. `fail-fast: false` keeps one owner's
+  broken token from cancelling the others
+- Declares `permissions: contents: read` — the least privilege `actions/checkout` needs; GitHub API work uses the per-owner PAT, not `GITHUB_TOKEN`
 - Installs Flutter via `subosito/flutter-action@v2` (stable channel, cache enabled) — the runner image has no Dart toolchain, and Flutter bundles the Dart SDK, so this puts both `flutter` and `dart` on the `PATH`
 - Downloads latest autoupdate binary using the official install script
 - Writes secrets to `.secure_files/` (GPG key and GitHub token as files)
-- Validates the GPG key before running
-- Runs `./autoupdate run` (reads credentials from file paths in `.autoupdate.yaml`)
+- Validates the GPG key and the owner's token before running
+- Renders a single-owner config, then runs `./autoupdate run --config` (credentials are read from the file paths in that config)
+- Asserts the owner was actually reached: AutoUpdate logs discovery failures and still exits 0,
+  so the `Assert Owner Was Reached` step fails the job when the log contains
+  `Failed to discover repos in` or no `Run complete:` summary
 - Cleans up `.secure_files/` on completion (always, even on failure)
 
 ### Workflow Secrets Required
 The GitHub Actions workflow expects these repository secrets:
-- `PERSONAL_ACCESS_TOKEN` - GitHub token with repo access (written to `.secure_files/github_access_token.key`)
+- `PERSONAL_ACCESS_TOKEN` - fine-grained PAT for the `rios0rios0` account
+- `MEDHUB_TECH_ACCESS_TOKEN` - fine-grained PAT for the `medhub-tech` organization
+- `PREFY_ACCESS_TOKEN` - fine-grained PAT for the `prefy` organization
 - `GPG_PRIVATE_KEY` - Armored GPG private key for commit signing (written to `.secure_files/autoupdate.asc`)
+
+The matrix job writes its own owner's token to `.secure_files/github_access_token.key`. A
+fine-grained PAT is bound to a single resource owner, so one token cannot cover all three, and
+every token's lifetime must be **366 days or less**: both organizations reject longer-lived
+fine-grained tokens with `403 ... forbids access via a fine-grained personal access tokens if
+the token's lifetime is greater than 366 days`. To add an owner, add a matrix entry and its
+secret — no other file changes.
 
 And these repository variables:
 - `GIT_USER_NAME` - Git committer name
@@ -124,11 +142,13 @@ And these repository variables:
 - **"providers[0].organizations must have at least one entry"**: Add at least one organization
 - **"ERROR: GPG key file is empty"**: `GPG_PRIVATE_KEY` secret is not set or is empty
 - **"ERROR: GPG key file does not contain valid armored PGP data"**: Secret must contain `gpg --export-secret-key --armor` output
-- **Missing secrets**: Workflow will fail if `PERSONAL_ACCESS_TOKEN` or `GPG_PRIVATE_KEY` secrets are not configured
+- **"ERROR: the '<SECRET>' secret is empty or not set"**: the matrix owner's PAT secret is missing
+- **`403 ... forbids access via a fine-grained personal access tokens`**: the owner's token was minted with a lifetime over 366 days; re-mint it with 366 days or less
+- **Missing secrets**: Workflow will fail if the owner's PAT or `GPG_PRIVATE_KEY` secrets are not configured
 
 ### Making Changes
 - **ALWAYS** validate configuration changes with `yamllint .autoupdate.yaml`
-- **ALWAYS** test autoupdate can parse the config with `./autoupdate run --dry-run`
+- **ALWAYS** test autoupdate can parse a rendered config with `./autoupdate run --dry-run --config <file>`
 - **ALWAYS** verify provider organizations are valid and accessible
 - No build process required - this is a pure configuration repository
 

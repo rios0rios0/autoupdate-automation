@@ -34,7 +34,7 @@ fails the job when the log contains `Failed to discover repos in` or no `Run com
 ## Required Secrets and Variables
 
 Secrets: `GPG_PRIVATE_KEY`, plus one fine-grained PAT per owner — `PERSONAL_ACCESS_TOKEN`
-(`rios0rios0`), `MEDHUB_TECH_ACCESS_TOKEN` (`medhub-tech`), `PREFY_ACCESS_TOKEN` (`prefy`).
+(`rios0rios0`), `MEDHUB_ACCESS_TOKEN` (`medhub-tech`), `PREFY_ACCESS_TOKEN` (`prefy`).
 Every token's lifetime must be **366 days or less**; both organizations reject longer-lived
 fine-grained tokens with a `403`.
 

@@ -105,9 +105,10 @@ GitHub Actions workflow that:
 - Writes secrets to `.secure_files/` (GPG key and GitHub token as files)
 - Validates the GPG key and the owner's token before running
 - Renders a single-owner config, then runs `./autoupdate run --config` (credentials are read from the file paths in that config)
-- Asserts the owner was actually reached: AutoUpdate logs discovery failures and still exits 0,
-  so the `Assert Owner Was Reached` step fails the job when the log contains
-  `Failed to discover repos in` or no `Run complete:` summary
+- Asserts the owner was actually reached: AutoUpdate logs discovery/provider failures and still
+  exits 0, so the `Assert Owner Was Reached` step fails the job when the log contains
+  `Failed to discover repos in` or `Failed to initialize provider`, or shows no `Run complete:`
+  summary; a non-zero error count parsed from that summary becomes a warning, not a failure
 - Cleans up `.secure_files/` on completion (always, even on failure)
 
 ### Workflow Secrets Required

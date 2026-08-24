@@ -29,7 +29,9 @@ A GitHub fine-grained PAT is bound to a single resource owner, so one token can 
 Configuration` step appends a single-owner `providers` block to a copy of `.autoupdate.yaml`.
 
 AutoUpdate logs a discovery failure and still exits `0`, so the `Assert Owner Was Reached` step
-fails the job when the log contains `Failed to discover repos in` or no `Run complete:` summary.
+fails the job when the log contains `Failed to discover repos in`/`Failed to initialize provider`
+or shows no `Run complete:` summary. A non-zero error count in that summary is downgraded to a
+warning, not a failure.
 
 ## Required Secrets and Variables
 

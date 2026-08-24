@@ -23,6 +23,7 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 
 ### Changed
 
+- refreshed `CLAUDE.md` and `.github/copilot-instructions.md` to document that the `Assert Owner Was Reached` step also matches `Failed to initialize provider` and downgrades a non-zero per-repository error count to a warning
 - changed the daily workflow to fan out into one job per owner via `strategy.matrix.owner`, each job authenticating with that owner's own fine-grained PAT (`PERSONAL_ACCESS_TOKEN`, `MEDHUB_ACCESS_TOKEN`, `PREFY_ACCESS_TOKEN`) and running with `fail-fast: false` so one broken token no longer cancels the other owners
 - changed `.autoupdate.yaml` to hold only the settings shared by every owner; the `providers` block is now rendered per job from the matrix entry, keeping the owner list and its secret declared in exactly one place
 

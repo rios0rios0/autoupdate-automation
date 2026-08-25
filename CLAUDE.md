@@ -23,7 +23,7 @@ The workflow does **not** pass credentials via environment variables. Instead:
 ## Architecture: One Job Per Owner
 
 A GitHub fine-grained PAT is bound to a single resource owner, so one token can never span
-`rios0rios0`, `medhub-tech` and `prefy`. The workflow therefore fans out with
+`rios0rios0`, `medhub-life` and `prefy`. The workflow therefore fans out with
 `strategy.matrix.owner`, each entry pairing an owner with the secret holding its token, and
 `fail-fast: false` so one broken token does not cancel the others. The `Render Owner
 Configuration` step appends a single-owner `providers` block to a copy of `.autoupdate.yaml`.
@@ -36,7 +36,7 @@ warning, not a failure.
 ## Required Secrets and Variables
 
 Secrets: `GPG_PRIVATE_KEY`, plus one fine-grained PAT per owner — `PERSONAL_ACCESS_TOKEN`
-(`rios0rios0`), `MEDHUB_ACCESS_TOKEN` (`medhub-tech`), `PREFY_ACCESS_TOKEN` (`prefy`).
+(`rios0rios0`), `MEDHUB_ACCESS_TOKEN` (`medhub-life`), `PREFY_ACCESS_TOKEN` (`prefy`).
 Every token's lifetime must be **366 days or less**; both organizations reject longer-lived
 fine-grained tokens with a `403`.
 

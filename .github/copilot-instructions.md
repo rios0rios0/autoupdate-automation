@@ -89,7 +89,7 @@ providers:
   - type: 'github'
     token: '.secure_files/github_access_token.key'
     organizations:
-      - 'medhub-tech'
+      - 'medhub-life'
 ```
 
 #### .github/workflows/autoupdate.yaml
@@ -114,7 +114,7 @@ GitHub Actions workflow that:
 ### Workflow Secrets Required
 The GitHub Actions workflow expects these repository secrets:
 - `PERSONAL_ACCESS_TOKEN` - fine-grained PAT for the `rios0rios0` account
-- `MEDHUB_ACCESS_TOKEN` - fine-grained PAT for the `medhub-tech` organization
+- `MEDHUB_ACCESS_TOKEN` - fine-grained PAT for the `medhub-life` organization
 - `PREFY_ACCESS_TOKEN` - fine-grained PAT for the `prefy` organization
 - `GPG_PRIVATE_KEY` - Armored GPG private key for commit signing (written to `.secure_files/autoupdate.asc`)
 

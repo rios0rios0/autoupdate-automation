@@ -1,3 +1,0 @@
-kind: 'Changed'
-body: 'refreshed `CLAUDE.md` and `.github/copilot-instructions.md` to use the renamed `claude-mention.yaml` / `claude-review.yaml` workflow file names and their `rios0rios0/pipelines` delegation target, and added the `.github/skills/code-review/SKILL.md` skill to the repository structure tree'
-time: '2026-09-01T16:54:18.319177648Z'

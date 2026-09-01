@@ -22,6 +22,12 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-09-01
+
+### Changed
+
+- refreshed `CLAUDE.md` and `.github/copilot-instructions.md` to use the renamed `claude-mention.yaml` / `claude-review.yaml` workflow file names and their `rios0rios0/pipelines` delegation target, and added the `.github/skills/code-review/SKILL.md` skill to the repository structure tree
+
 ## [0.4.1] - 2026-08-28
 
 ### Changed

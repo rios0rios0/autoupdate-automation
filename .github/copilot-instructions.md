@@ -66,6 +66,7 @@ This repository provides automated dependency and version management across mult
 │   │       └── SKILL.md         # GitHub Copilot code-review skill
 │   └── workflows/
 │       ├── autoupdate.yaml       # Daily automation workflow
+│       ├── checks.yaml           # PR gate: shared rebase + changelog-fragment checks
 │       ├── claude-mention.yaml   # Claude Code assistant workflow
 │       ├── claude-review.yaml    # Claude Code PR review workflow
 │       └── release.yaml          # Release tagging workflow

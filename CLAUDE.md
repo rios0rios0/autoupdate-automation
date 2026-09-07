@@ -12,6 +12,7 @@ Configuration-only repository that runs [autoupdate](https://github.com/rios0rio
 - `.github/workflows/autoupdate.yaml` — daily workflow (09:00 UTC), one matrix job per owner. Installs Flutter (which bundles the Dart SDK the runner image lacks), writes secrets to `.secure_files/` as files, renders a single-owner config, runs autoupdate, asserts the owner was reached, cleans up.
 - `.github/workflows/claude-mention.yaml` and `claude-review.yaml` — Claude Code assistant and PR review workflows (delegate to reusable workflows in `rios0rios0/pipelines`).
 - `.github/workflows/release.yaml` — tags releases on push to `main` (delegates to reusable workflow in `rios0rios0/pipelines`).
+- `.github/workflows/checks.yaml` — PR gate on `main`; delegates to the shared `rios0rios0/pipelines` checks (rebase status and the changelog-fragment rule). This is what fails a PR that omits its chlog fragment.
 
 ## Architecture: File-Based Secrets
 

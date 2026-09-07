@@ -1,0 +1,3 @@
+kind: 'Changed'
+body: 'refreshed `.github/skills/code-review/SKILL.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` to replace the matchable Slack token prefix in the secret-hygiene rule and document the new `checks.yaml` PR gate'
+time: '2026-09-07T12:00:00.000000000Z'

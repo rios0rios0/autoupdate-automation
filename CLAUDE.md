@@ -63,7 +63,7 @@ yamllint .autoupdate.yaml
 ## Conventions
 
 - `CHANGELOG.md` is generated and never edited by hand — a change writes its own fragment with
-  `chlog new --kind <Kind> --body "..."`, and the kinds are the
+  `chlog new --kind <Kind> --body '...'`, and the kinds are the
   [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) categories.
 - Commit messages and branch names follow conventions in the [Development Guide](https://github.com/rios0rios0/guide/wiki).
 - Release branches use `bump/x.x.x` naming.
@@ -79,13 +79,14 @@ being asked, before committing.
 
 - Do NOT edit CHANGELOG.md directly; it is generated from fragments.
 - Create the fragment with:
-  `chlog new --kind <Kind> --body "<imperative description>"`
+  `chlog new --kind <Kind> --body '<past-tense description>'`
+- Write an apostrophe inside the single-quoted body as `'\''`.
 - Valid kinds: Added, Changed, Deprecated, Removed, Fixed, Security
 - Choose the kind that best matches the change (e.g., new feature → Added,
   bug fix → Fixed, behavior change → Changed, removal → Removed, security fix → Security).
 - If the change is backward-INCOMPATIBLE with the public API (a breaking
   change), you MUST add the `--breaking` flag:
-  `chlog new --kind <Kind> --breaking --body "<description>"`.
+  `chlog new --kind <Kind> --breaking --body '<past-tense description>'`.
   This is the ONLY thing that triggers a major version bump — the kind alone
   never does (per SemVer, major = incompatible change). When unsure whether a
   change breaks compatibility, ask the user instead of guessing.

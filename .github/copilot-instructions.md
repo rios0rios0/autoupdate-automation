@@ -2,13 +2,9 @@
 
 This repository provides automated dependency and version management across multiple projects using the [autoupdate tool](https://github.com/rios0rios0/autoupdate). It is a configuration and automation repository containing a GitHub Actions workflow that runs the autoupdate tool daily to detect outdated dependencies and create Pull Requests to upgrade them.
 
-**ALWAYS** reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
-
 ## Working Effectively
 
 ### Bootstrap and Test the Repository
-- Install required system dependencies:
-  - `sudo apt-get update && sudo apt-get install -y curl` -- takes 30-60 seconds
 - Download and test autoupdate binary using the official install script:
   - `curl -fsSL https://raw.githubusercontent.com/rios0rios0/autoupdate/main/install.sh | sh -s -- --install-dir . --force` -- downloads and installs the binary
   - `./autoupdate --help` -- verify binary works
@@ -20,32 +16,21 @@ This repository provides automated dependency and version management across mult
   - **No** provider definitions. A fine-grained PAT is bound to a single resource owner, so the
     workflow runs one matrix job per owner and appends a single-owner `providers` block (token
     reference plus organization list) to a copy of this file at runtime
-- Token format supports inline values, `${ENV_VAR}` references, or file paths (current config uses a file path)
+- Token format supports inline values, `${ENV_VAR}` references, or file paths (the per-owner config the workflow renders uses a file path under `.secure_files/`)
 - Validate configuration syntax: `yamllint .autoupdate.yaml` -- takes <1 second
   - WARNING: yamllint will report missing document start "---" which is acceptable
 
 ### Testing Workflow Components
 - Test autoupdate processing:
-  - `./autoupdate run --dry-run` -- preview changes without creating PRs
+  - `./autoupdate run --dry-run --config <rendered-config>` -- preview changes without creating PRs; `.autoupdate.yaml` alone has no `providers` block, so append a single-owner one to a copy first, as the workflow does
   - With valid credentials: discovers repos and scans dependencies
-  - Without credentials: fails with authentication errors (<1 second), which is expected
+  - Without credentials: fails with authentication errors, which is expected
 
 ## Validation
 
-### Manual Workflow Testing
-- **ALWAYS** test workflow components after making configuration changes
-- Run the complete workflow simulation:
-  1. Download dependencies (30-60 seconds)
-  2. Download autoupdate binary via install script (<5 seconds)
-  3. Test binary execution (<1 second)
-  4. Validate configuration syntax (<1 second)
-- **NEVER CANCEL** workflow operations - all steps complete in under 2 minutes
-- The actual GitHub Actions workflow runs daily at 09:00 UTC (6:00 AM BRT) and can be manually triggered
-
 ### Configuration Validation Steps
 - Validate YAML syntax: `yamllint .autoupdate.yaml`
-- Test autoupdate config parsing: `./autoupdate run --dry-run` (expect authentication errors without credentials)
-- Verify provider organizations are accessible
+- Test autoupdate config parsing: `./autoupdate run --dry-run --config <rendered-config>` (expect authentication errors without credentials)
 - Check that token file paths or env var references correspond to configured repository secrets
 
 ## Common Tasks
@@ -53,7 +38,7 @@ This repository provides automated dependency and version management across mult
 ### Repository Structure
 ```
 .
-├── .autoupdate.yaml         # Main autoupdate configuration (providers, GPG, exclusions)
+├── .autoupdate.yaml         # Settings shared by every owner (GPG, exclusions); no providers
 ├── .editorconfig            # Editor configuration
 ├── .github/
 │   ├── copilot-instructions.md
@@ -70,8 +55,9 @@ This repository provides automated dependency and version management across mult
 │       ├── claude-mention.yaml   # Claude Code assistant workflow
 │       ├── claude-review.yaml    # Claude Code PR review workflow
 │       └── release.yaml          # Release tagging workflow
+├── AGENTS.md                # Instructions shared by every coding agent
 ├── CHANGELOG.md             # Release history (Keep a Changelog format)
-├── CLAUDE.md                # Claude Code assistant guidance
+├── CLAUDE.md                # Imports AGENTS.md (`@AGENTS.md`)
 ├── CONTRIBUTING.md          # Contribution guidelines
 ├── LICENSE                  # Project license
 └── README.md                # Basic project description
@@ -126,25 +112,18 @@ The matrix job writes its own owner's token to `.secure_files/github_access_toke
 fine-grained PAT is bound to a single resource owner, so one token cannot cover all three, and
 every token's lifetime must be **366 days or less**: both organizations reject longer-lived
 fine-grained tokens with `403 ... forbids access via a fine-grained personal access tokens if
-the token's lifetime is greater than 366 days`. To add an owner, add a matrix entry and its
-secret — no other file changes.
+the token's lifetime is greater than 366 days`. To add an owner, add a matrix entry and create its
+secret. No other configuration changes, but the docs that list the owners (`README.md`, `AGENTS.md`,
+this file, the `.autoupdate.yaml` header comment) and a chlog fragment ship in the same change.
 
 And these repository variables:
 - `GIT_USER_NAME` - Git committer name
 - `GIT_USER_EMAIL` - Git committer email
 - `GIT_USER_SIGNINGKEY` - GPG signing key ID
 
-### Expected Timing
-- **apt-get update && install**: 30-60 seconds
-- **autoupdate install script**: <5 seconds
-- **autoupdate execution**: <1 second
-- **configuration validation**: <1 second
-- **Complete workflow test**: <2 minutes total
-
 ### Common Failure Scenarios
-- **"at least one provider must be configured"**: Check `.autoupdate.yaml` has valid provider entries
-- **"providers[0].token is required"**: Ensure token file path or env var is configured
-- **"providers[0].organizations must have at least one entry"**: Add at least one organization
+- **"at least one provider must be configured"**: autoupdate read `.autoupdate.yaml` directly; pass `--config` a copy with a single-owner `providers` block appended. Do not add providers to `.autoupdate.yaml` itself — the workflow appends its own `providers:` key, and a second one would duplicate it
+- **"providers[0].token is required"** / **"providers[0].organizations must have at least one entry"**: the rendered `providers` block is incomplete; compare it with the `Render Owner Configuration` step
 - **"ERROR: GPG key file is empty"**: `GPG_PRIVATE_KEY` secret is not set or is empty
 - **"ERROR: GPG key file does not contain valid armored PGP data"**: Secret must contain `gpg --export-secret-key --armor` output
 - **"ERROR: the '<SECRET>' secret is empty or not set"**: the matrix owner's PAT secret is missing
@@ -152,9 +131,8 @@ And these repository variables:
 - **Missing secrets**: Workflow will fail if the owner's PAT or `GPG_PRIVATE_KEY` secrets are not configured
 
 ### Making Changes
-- **ALWAYS** validate configuration changes with `yamllint .autoupdate.yaml`
-- **ALWAYS** test autoupdate can parse a rendered config with `./autoupdate run --dry-run --config <file>`
-- **ALWAYS** verify provider organizations are valid and accessible
+- Validate configuration changes with `yamllint .autoupdate.yaml`, and check that autoupdate parses a rendered config with `./autoupdate run --dry-run --config <file>`
+- Owner reachability needs the owner's PAT, so the workflow's `Assert Owner Was Reached` step checks it on every run; it cannot be verified locally
 - No build process required - this is a pure configuration repository
 
 ### Integration Points

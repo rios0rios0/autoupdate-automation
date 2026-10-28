@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents (Claude Code, Codex, Cursor, GitHub Copilot) when working with code in this repository.
 
 ## What This Repo Is
 
@@ -9,15 +9,15 @@ Configuration-only repository that runs [autoupdate](https://github.com/rios0rio
 ## Key Files
 
 - `.autoupdate.yaml` — global autoupdate configuration: GPG key path and fork exclusion. It carries **no** `providers` block; the workflow appends a single-owner one per matrix job.
-- `.github/workflows/autoupdate.yaml` — daily workflow (09:00 UTC), one matrix job per owner. Installs Flutter (which bundles the Dart SDK the runner image lacks), writes secrets to `.secure_files/` as files, renders a single-owner config, runs autoupdate, asserts the owner was reached, cleans up.
+- `.github/workflows/autoupdate.yaml` — daily workflow (09:00 UTC), one matrix job per owner (see below). It installs Flutter because the runner image lacks the Dart SDK, which Flutter bundles.
 - `.github/workflows/claude-mention.yaml` and `claude-review.yaml` — Claude Code assistant and PR review workflows (delegate to reusable workflows in `rios0rios0/pipelines`).
 - `.github/workflows/release.yaml` — tags releases on push to `main` (delegates to reusable workflow in `rios0rios0/pipelines`).
 - `.github/workflows/checks.yaml` — PR gate on `main`; delegates to the shared `rios0rios0/pipelines` checks (rebase status and the changelog-fragment rule). This is what fails a PR that omits its chlog fragment.
 
 ## Architecture: File-Based Secrets
 
-The workflow does **not** pass credentials via environment variables. Instead:
-1. The matrix job's owner token (`secrets[matrix.owner.secret]`) and `GPG_PRIVATE_KEY` are written to `.secure_files/` as files.
+AutoUpdate never reads credentials from environment variables. Instead:
+1. The `Prepare Secrets` step writes the matrix job's owner token (`secrets[matrix.owner.secret]`) and `GPG_PRIVATE_KEY` to `.secure_files/` as files; no later step receives the values.
 2. The rendered config references these file paths (`token: '.secure_files/github_access_token.key'`, `gpg_key_path: '.secure_files/autoupdate.asc'`).
 3. The cleanup step removes `.secure_files/` on every run (including failures).
 

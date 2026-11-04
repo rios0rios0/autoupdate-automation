@@ -22,6 +22,13 @@ Exceptions are acceptable depending on the circumstances (critical bug fixes tha
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-04
+
+### Changed
+
+- corrected `.github/copilot-instructions.md`, which told agents to add a `providers` block to `.autoupdate.yaml` and dry-run without `--config`, clarified in `AGENTS.md` that AutoUpdate reads credentials only from `.secure_files/`, rescoped the `code-review` skill to the owner matrix instead of a nonexistent repository list, dropped template severity rows that assumed a test suite, and fixed the Git Flow guide link in `CONTRIBUTING.md`
+- moved the agent instructions from `CLAUDE.md` to `AGENTS.md`, keeping a `CLAUDE.md` that imports it, and pointed `.github/copilot-instructions.md` and the `code-review` skill at `AGENTS.md`
+
 ## [0.5.1] - 2026-09-08
 
 ### Changed
